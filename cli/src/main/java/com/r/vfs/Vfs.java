@@ -231,4 +231,81 @@ public class Vfs {
         currentDirectory = directory;
         return true;
     }
+
+    public boolean remove(String path, boolean recursive) {
+        VfsNode node = resolve(path);
+
+        if (node == null || node == root) {
+            return false;
+        }
+
+        if (!(node instanceof VfsDirectory directory)) {
+            VfsDirectory parent = node.getParent();
+
+            if (parent == null) {
+                return false;
+            }
+
+            parent.removeChild(node.getName());
+            fileCount--;
+
+            return true;
+        }
+
+        if (contains(directory, currentDirectory)) {
+            return false;
+        }
+
+        if (!recursive) {
+            return false;
+        }
+
+        int[] counts = countNodes(directory);
+
+        VfsDirectory parent = directory.getParent();
+
+        if (parent == null) {
+            return false;
+        }
+
+        parent.removeChild(directory.getName());
+
+        directoryCount -= counts[0];
+        fileCount -= counts[1];
+
+        return true;
+    }
+
+    private int[] countNodes(VfsDirectory directory) {
+        int directories = 1;
+        int files = 0;
+
+        for (VfsNode child : directory.getChildren()) {
+            if (child instanceof VfsDirectory childDirectory) {
+                int[] childCounts = countNodes(childDirectory);
+
+                directories += childCounts[0];
+                files += childCounts[1];
+            } else {
+                files++;
+            }
+        }
+
+        return new int[]{directories, files};
+    }
+
+    public boolean contains(VfsDirectory directory, VfsDirectory target) {
+        VfsDirectory current = target;
+
+        while (current != null) {
+            if (current == directory) {
+                return true;
+            }
+
+            current = current.getParent();
+        }
+
+        return false;
+    }
+
 }

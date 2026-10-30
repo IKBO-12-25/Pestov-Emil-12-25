@@ -125,14 +125,11 @@ public class Shell {
 
         switch (command) {
             case "ls" -> executeLs(parsed.arguments());
-
             case "cd" -> executeCd(parsed.arguments());
-
             case "uname" -> executeUname(parsed.arguments());
-
             case "wc" -> executeWc(parsed.arguments());
-
             case "tree" -> executeTree(parsed.arguments());
+            case "rm" -> executeRm(parsed.arguments());
 
             case "exit" -> {
                 if (!parsed.arguments().isEmpty()) {
@@ -580,6 +577,97 @@ public class Shell {
                         childDirectory,
                         nextPrefix,
                         showHidden
+                );
+            }
+        }
+    }
+
+    private void executeRm(java.util.List<String> arguments) {
+        boolean recursive = false;
+        boolean force = false;
+        boolean optionsEnabled = true;
+
+        java.util.List<String> paths = new java.util.ArrayList<>();
+
+        for (String argument : arguments) {
+
+            if (optionsEnabled && argument.equals("--")) {
+                optionsEnabled = false;
+                continue;
+            }
+
+            if (optionsEnabled && argument.startsWith("-")
+                    && !argument.equals("-")) {
+
+                for (int i = 1; i < argument.length(); i++) {
+                    switch (argument.charAt(i)) {
+                        case 'r', 'R' -> recursive = true;
+                        case 'f' -> force = true;
+
+                        default -> throw new IllegalArgumentException(
+                                "rm: неизвестный параметр: -" +
+                                        argument.charAt(i)
+                        );
+                    }
+                }
+
+            } else {
+                paths.add(argument);
+            }
+        }
+
+        if (paths.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "rm: необходимо указать файл или каталог"
+            );
+        }
+
+        for (String path : paths) {
+            com.r.vfs.VfsNode node = vfs.resolve(path);
+
+            if (node == null) {
+                if (!force) {
+                    System.out.println(
+                            "rm: невозможно удалить '" +
+                                    path + "': нет такого файла или каталога"
+                    );
+                }
+
+                continue;
+            }
+
+            if (node == vfs.getRoot()) {
+                System.out.println(
+                        "rm: запрещено удалять корневую директорию VFS"
+                );
+                continue;
+            }
+
+            if (node instanceof com.r.vfs.VfsDirectory directory) {
+
+                if (vfs.contains(
+                        directory,
+                        vfs.getCurrentDirectory()
+                )) {
+                    System.out.println(
+                            "rm: нельзя удалить текущий каталог " +
+                                    "или его родительскую директорию"
+                    );
+                    continue;
+                }
+
+                if (!recursive) {
+                    System.out.println(
+                            "rm: невозможно удалить '" + path +
+                                    "': является каталогом (используйте -r)"
+                    );
+                    continue;
+                }
+            }
+
+            if (!vfs.remove(path, recursive)) {
+                System.out.println(
+                        "rm: не удалось удалить: " + path
                 );
             }
         }

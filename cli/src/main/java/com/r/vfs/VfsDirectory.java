@@ -22,6 +22,10 @@ public class VfsDirectory extends VfsNode {
         children.put(node.getName(), node);
     }
 
+    public VfsNode removeChild(String name) {
+        return children.remove(name);
+    }
+
     public VfsNode getChild(String name) {
         return children.get(name);
     }
