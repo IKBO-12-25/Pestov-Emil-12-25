@@ -1,72 +1,41 @@
 
 package com.r;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Scanner;
+import com.r.config.AppConfig;
+import com.r.logging.XmlCommandLogger;
+import com.r.shell.Shell;
 
 public class Main {
 
-    private static final String VFS_NAME = "cli";
-
     public static void main(String[] args) {
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (true) {
-                System.out.print(VFS_NAME + ":/$ ");
+        try {
+            AppConfig config = AppConfig.parse(args);
 
-                if (!scanner.hasNextLine()) {
-                    break;
-                }
+            printConfiguration(config);
 
-                String input = scanner.nextLine().trim();
+            XmlCommandLogger logger = new XmlCommandLogger(config.logPath());
 
-                if (input.isEmpty()) {
-                    continue;
-                }
+            Shell shell = new Shell(logger);
 
-                input = expandVariables(input);
+            shell.run(config.scriptPath());
 
-                String[] parts = input.split("\\s+");
-                String command = parts[0];
-                String[] commandArgs = Arrays.copyOfRange(
-                        parts, 1, parts.length
-                );
+        } catch (IllegalArgumentException exception) {
+            System.err.println("Configuration error: " + exception.getMessage());
 
-                switch (command) {
-                    case "ls" -> {
-                        System.out.println(
-                                "Команда ls, аргументы: "
-                                        + Arrays.toString(commandArgs)
-                        );
-                    }
-                    case "cd" -> {
-                        System.out.println(
-                                "Команда cd, аргументы: "
-                                        + Arrays.toString(commandArgs)
-                        );
-                    }
-                    case "exit" -> {
-                        System.out.println("Завершение работы.");
-                        return;
-                    }
-                    default -> System.out.println(
-                            "Ошибка: неизвестная команда: " + command
-                    );
-                }
-            }
+            System.exit(1);
         }
     }
 
-    private static String expandVariables(String input) {
-        Map<String, String> environment = System.getenv();
+    private static void printConfiguration(AppConfig config) {
+        System.out.println("CLI emulator configuration:");
+        System.out.println("VFS path: " + (config.vfsPath() == null ? "(not specified)" : config.vfsPath()));
 
-        for (Map.Entry<String, String> entry : environment.entrySet()) {
-            input = input.replace(
-                    "$" + entry.getKey(),
-                    entry.getValue()
-            );
-        }
+        System.out.println("Log path: " + config.logPath());
 
-        return input;
+        System.out.println("Startup script: " + (config.scriptPath() == null ? "(not specified)" : config.scriptPath()));
+
+        System.out.println("Username: " + System.getProperty("user.name"));
+
+        System.out.println();
     }
 }
