@@ -1,9 +1,9 @@
-
 package com.r.shell;
 
 import com.r.logging.XmlCommandLogger;
 import com.r.parser.CommandParser;
 import com.r.parser.CommandParser.ParsedCommand;
+import com.r.vfs.Vfs;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,14 +13,18 @@ import java.util.Scanner;
 
 public class Shell {
 
-    private static final String VFS_NAME = "cli";
-
     private final CommandParser parser;
     private final XmlCommandLogger logger;
+    private final Vfs vfs;
 
-    public Shell(XmlCommandLogger logger) {
+    public Shell(XmlCommandLogger logger, Vfs vfs) {
         this.parser = new CommandParser();
         this.logger = logger;
+        this.vfs = vfs;
+    }
+
+    private String getPrompt() {
+        return vfs.getName() + ":" + vfs.getCurrentPath() + "$ ";
     }
 
     public void run(Path scriptPath) {
@@ -32,7 +36,7 @@ public class Shell {
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
-                System.out.print(VFS_NAME + ":/$ ");
+                System.out.print(getPrompt());
 
                 if (!scanner.hasNextLine()) {
                     break;
@@ -45,7 +49,9 @@ public class Shell {
                         break;
                     }
                 } catch (IllegalArgumentException exception) {
-                    System.out.println("Ошибка: " + exception.getMessage());
+                    System.out.println(
+                            "Ошибка: " + exception.getMessage()
+                    );
                 }
             }
         }
@@ -57,7 +63,9 @@ public class Shell {
         System.out.println();
 
         if (!Files.isRegularFile(scriptPath)) {
-            System.out.println("Ошибка: стартовый скрипт не найден: " + scriptPath);
+            System.out.println(
+                    "Ошибка: стартовый скрипт не найден: " + scriptPath
+            );
             return true;
         }
 
@@ -67,23 +75,28 @@ public class Shell {
                     StandardCharsets.UTF_8
             )) {
 
-                if (line.isBlank() || line.stripLeading().startsWith("#")) {
+                if (line.isBlank() ||
+                        line.stripLeading().startsWith("#")) {
                     continue;
                 }
 
-                System.out.println(VFS_NAME + ":/$ " + line);
+                System.out.println(getPrompt() + line);
 
                 try {
                     if (!executeCommand(line)) {
                         return false;
                     }
                 } catch (IllegalArgumentException exception) {
-                    System.out.println("Ошибка: " + exception.getMessage());
+                    System.out.println(
+                            "Ошибка: " + exception.getMessage()
+                    );
                 }
             }
 
         } catch (IOException exception) {
-            System.out.println("Ошибка чтения скрипта: " + exception.getMessage());
+            System.out.println(
+                    "Ошибка чтения скрипта: " + exception.getMessage()
+            );
         }
 
         System.out.println();
@@ -105,21 +118,25 @@ public class Shell {
         try {
             logger.log(command, parsed.arguments());
         } catch (IOException exception) {
-            System.out.println("Ошибка логирования: " + exception.getMessage());
+            System.out.println(
+                    "Ошибка логирования: " + exception.getMessage()
+            );
         }
 
         switch (command) {
-            case "ls" -> {
-                System.out.println("Команда ls, аргументы: " + parsed.arguments());
-            }
+            case "ls" -> System.out.println(
+                    "Команда ls, аргументы: " + parsed.arguments()
+            );
 
-            case "cd" -> {
-                System.out.println("Команда cd, аргументы: " + parsed.arguments());
-            }
+            case "cd" -> System.out.println(
+                    "Команда cd, аргументы: " + parsed.arguments()
+            );
 
             case "exit" -> {
                 if (!parsed.arguments().isEmpty()) {
-                    System.out.println("Ошибка: команда exit не принимает аргументы.");
+                    System.out.println(
+                            "Ошибка: команда exit не принимает аргументы."
+                    );
                     return true;
                 }
 
@@ -127,9 +144,9 @@ public class Shell {
                 return false;
             }
 
-            default -> {
-                System.out.println("Ошибка: неизвестная команда: " + command);
-            }
+            default -> System.out.println(
+                    "Ошибка: неизвестная команда: " + command
+            );
         }
 
         return true;

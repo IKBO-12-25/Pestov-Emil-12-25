@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <events>
-                                                                            
+                                                                                    
+    
+    
     
     
     
@@ -19,7 +21,9 @@
     
     
     <event timestamp="2026-10-30T23:53:29.6248306+03:00" username="pesto">
-                                                                                                                                                        
+                                                                                                                                                                        
+        
+        
         
         
         
@@ -38,7 +42,9 @@
         
         
         <command>ll</command>
-                                                                                                                                                        
+                                                                                                                                                                        
+        
+        
         
         
         
@@ -57,6 +63,204 @@
         
         
         <arguments/>
+                                                                                                                                                                    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                                                                
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-30T23:53:31.4851293+03:00" username="pesto">
+                                                                                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                                                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <arguments/>
+                                                                                                                                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-30T23:53:35.3019199+03:00" username="pesto">
+                                                                                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                                                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                                                                                                                                                                    
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>logs</argument>
+                                                                                                                                                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
                                                                                                                                                     
     
     
@@ -94,7 +298,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:53:31.4851293+03:00" username="pesto">
+    <event timestamp="2026-10-30T23:53:38.7772895+03:00" username="pesto">
                                                                                                                                                 
         
         
@@ -112,7 +316,7 @@
         
         
         
-        <command>ls</command>
+        <command>cd</command>
                                                                                                                                                 
         
         
@@ -166,7 +370,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:53:35.3019199+03:00" username="pesto">
+    <event timestamp="2026-10-30T23:53:41.2286744+03:00" username="pesto">
                                                                                                                                         
         
         
@@ -183,7 +387,7 @@
         
         
         
-        <command>ls</command>
+        <command>cd</command>
                                                                                                                                         
         
         
@@ -217,7 +421,7 @@
             
             
             
-            <argument>logs</argument>
+            <argument>..</argument>
                                                                                                                                                                                                         
         
         
@@ -268,7 +472,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:53:38.7772895+03:00" username="pesto">
+    <event timestamp="2026-10-30T23:53:43.1157758+03:00" username="pesto">
                                                                                                                                 
         
         
@@ -300,7 +504,39 @@
         
         
         
-        <arguments/>
+        <arguments>
+                                                                                                                                                                                                
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>.</argument>
+                                                                                                                                                                                            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
                                                                                                                             
     
     
@@ -332,7 +568,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:53:41.2286744+03:00" username="pesto">
+    <event timestamp="2026-10-30T23:54:19.3327381+03:00" username="pesto">
                                                                                                                         
         
         
@@ -347,7 +583,7 @@
         
         
         
-        <command>cd</command>
+        <command>exit</command>
                                                                                                                         
         
         
@@ -362,37 +598,7 @@
         
         
         
-        <arguments>
-                                                                                                                                                                                    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            <argument>..</argument>
-                                                                                                                                                                                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        </arguments>
+        <arguments/>
                                                                                                                     
     
     
@@ -422,7 +628,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:53:43.1157758+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.579304813+03:00" username="pesto">
                                                                                                                 
         
         
@@ -436,7 +642,7 @@
         
         
         
-        <command>cd</command>
+        <command>ls</command>
                                                                                                                 
         
         
@@ -450,35 +656,7 @@
         
         
         
-        <arguments>
-                                                                                                                                                                        
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            <argument>.</argument>
-                                                                                                                                                                    
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        </arguments>
+        <arguments/>
                                                                                                             
     
     
@@ -506,7 +684,7 @@
     
     
     
-    <event timestamp="2026-10-30T23:54:19.3327381+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.71812978+03:00" username="pesto">
                                                                                                         
         
         
@@ -519,7 +697,7 @@
         
         
         
-        <command>exit</command>
+        <command>ls</command>
                                                                                                         
         
         
@@ -532,7 +710,46 @@
         
         
         
-        <arguments/>
+        <arguments>
+                                                                                                                                                            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>-l</argument>
+                                                                                                                                                            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>/home</argument>
+                                                                                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
                                                                                                     
     
     
@@ -558,7 +775,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.579304813+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.743828758+03:00" username="pesto">
                                                                                                 
         
         
@@ -582,7 +799,31 @@
         
         
         
-        <arguments/>
+        <arguments>
+                                                                                                                                                
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>/home/pesto</argument>
+                                                                                                                                            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
                                                                                             
     
     
@@ -606,7 +847,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.71812978+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.77111515+03:00" username="pesto">
                                                                                         
         
         
@@ -617,7 +858,7 @@
         
         
         
-        <command>ls</command>
+        <command>cd</command>
                                                                                         
         
         
@@ -629,17 +870,6 @@
         
         
         <arguments>
-                                                                                                                                    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            <argument>-l</argument>
                                                                                                                                     
             
             
@@ -683,7 +913,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.743828758+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.794239649+03:00" username="pesto">
                                                                                 
         
         
@@ -693,7 +923,7 @@
         
         
         
-        <command>ls</command>
+        <command>cd</command>
                                                                                 
         
         
@@ -743,7 +973,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.77111515+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.817211998+03:00" username="pesto">
                                                                         
         
         
@@ -752,7 +982,7 @@
         
         
         
-        <command>cd</command>
+        <command>unknown</command>
                                                                         
         
         
@@ -761,25 +991,7 @@
         
         
         
-        <arguments>
-                                                                                                            
-            
-            
-            
-            
-            
-            
-            
-            <argument>/home</argument>
-                                                                                                        
-        
-        
-        
-        
-        
-        
-        
-        </arguments>
+        <arguments/>
                                                                     
     
     
@@ -797,7 +1009,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.794239649+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.841888408+03:00" username="pesto">
                                                                 
         
         
@@ -805,7 +1017,7 @@
         
         
         
-        <command>cd</command>
+        <command>invalid-command</command>
                                                                 
         
         
@@ -813,23 +1025,7 @@
         
         
         
-        <arguments>
-                                                                                                
-            
-            
-            
-            
-            
-            
-            <argument>/home/pesto</argument>
-                                                                                            
-        
-        
-        
-        
-        
-        
-        </arguments>
+        <arguments/>
                                                             
     
     
@@ -845,21 +1041,35 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.817211998+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.866773381+03:00" username="pesto">
                                                         
         
         
         
         
         
-        <command>unknown</command>
+        <command>ls</command>
                                                         
         
         
         
         
         
-        <arguments/>
+        <arguments>
+                                                                                    
+            
+            
+            
+            
+            
+            <argument>/home/pesto</argument>
+                                                                                
+        
+        
+        
+        
+        
+        </arguments>
                                                     
     
     
@@ -873,19 +1083,31 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.841888408+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.889134898+03:00" username="pesto">
                                                 
         
         
         
         
-        <command>invalid-command</command>
+        <command>cd</command>
                                                 
         
         
         
         
-        <arguments/>
+        <arguments>
+                                                                        
+            
+            
+            
+            
+            <argument>pesto</argument>
+                                                                    
+        
+        
+        
+        
+        </arguments>
                                             
     
     
@@ -897,7 +1119,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.866773381+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.910508512+03:00" username="pesto">
                                         
         
         
@@ -907,17 +1129,7 @@
         
         
         
-        <arguments>
-                                                            
-            
-            
-            
-            <argument>/home/pesto</argument>
-                                                        
-        
-        
-        
-        </arguments>
+        <arguments/>
                                     
     
     
@@ -927,7 +1139,7 @@
     
     
     
-    <event timestamp="2026-10-31T00:08:50.889134898+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.93250091+03:00" username="pesto">
                                 
         
         
@@ -935,15 +1147,7 @@
                                 
         
         
-        <arguments>
-                                                
-            
-            
-            <argument>pesto</argument>
-                                            
-        
-        
-        </arguments>
+        <arguments/>
                             
     
     
@@ -951,10 +1155,10 @@
             
     
     
-    <event timestamp="2026-10-31T00:08:50.910508512+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:08:50.956086233+03:00" username="pesto">
                         
         
-        <command>ls</command>
+        <command>exit</command>
                         
         
         <arguments/>
@@ -963,16 +1167,16 @@
     </event>
         
     
-    <event timestamp="2026-10-31T00:08:50.93250091+03:00" username="pesto">
+    <event timestamp="2026-10-31T00:26:09.1177517+03:00" username="pesto">
                 
-        <command>cd</command>
+        <command>ls</command>
                 
         <arguments/>
             
     </event>
     
-    <event timestamp="2026-10-31T00:08:50.956086233+03:00" username="pesto">
-        <command>exit</command>
+    <event timestamp="2026-10-31T00:26:11.0488047+03:00" username="pesto">
+        <command>cd</command>
         <arguments/>
     </event>
 </events>
