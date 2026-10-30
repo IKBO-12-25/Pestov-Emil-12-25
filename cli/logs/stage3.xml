@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<events>
+                                                
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:32.968706725+03:00" username="pesto">
+                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <arguments/>
+                                                                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.105413797+03:00" username="pesto">
+                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                                                                    
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>-l</argument>
+                                                                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
+                                                                                    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.127948333+03:00" username="pesto">
+                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                                                
+        
+        
+        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                                                        
+            
+            
+            
+            
+            
+            
+            
+            
+            <argument>/home</argument>
+                                                                                                                    
+        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
+                                                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                    
+    
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.148953973+03:00" username="pesto">
+                                                                        
+        
+        
+        
+        
+        
+        
+        
+        <command>cd</command>
+                                                                        
+        
+        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                                            
+            
+            
+            
+            
+            
+            
+            
+            <argument>/home</argument>
+                                                                                                        
+        
+        
+        
+        
+        
+        
+        
+        </arguments>
+                                                                    
+    
+    
+    
+    
+    
+    
+    
+    </event>
+                                
+    
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.170853811+03:00" username="pesto">
+                                                                
+        
+        
+        
+        
+        
+        
+        <command>cd</command>
+                                                                
+        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                                
+            
+            
+            
+            
+            
+            
+            <argument>..</argument>
+                                                                                            
+        
+        
+        
+        
+        
+        
+        </arguments>
+                                                            
+    
+    
+    
+    
+    
+    
+    </event>
+                            
+    
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.194331669+03:00" username="pesto">
+                                                        
+        
+        
+        
+        
+        
+        <command>ls</command>
+                                                        
+        
+        
+        
+        
+        
+        <arguments>
+                                                                                    
+            
+            
+            
+            
+            
+            <argument>/home/pesto</argument>
+                                                                                
+        
+        
+        
+        
+        
+        </arguments>
+                                                    
+    
+    
+    
+    
+    
+    </event>
+                        
+    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.217567762+03:00" username="pesto">
+                                                
+        
+        
+        
+        
+        <command>cd</command>
+                                                
+        
+        
+        
+        
+        <arguments>
+                                                                        
+            
+            
+            
+            
+            <argument>/home/pesto</argument>
+                                                                    
+        
+        
+        
+        
+        </arguments>
+                                            
+    
+    
+    
+    
+    </event>
+                    
+    
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.240793108+03:00" username="pesto">
+                                        
+        
+        
+        
+        <command>ls</command>
+                                        
+        
+        
+        
+        <arguments/>
+                                    
+    
+    
+    
+    </event>
+                
+    
+    
+    
+    <event timestamp="2026-10-31T00:39:33.261843416+03:00" username="pesto">
+                                
+        
+        
+        <command>cd</command>
+                                
+        
+        
+        <arguments/>
+                            
+    
+    
+    </event>
+            
+    
+    
+    <event timestamp="2026-10-31T00:39:33.285482146+03:00" username="pesto">
+                        
+        
+        <command>unknown</command>
+                        
+        
+        <arguments/>
+                    
+    
+    </event>
+        
+    
+    <event timestamp="2026-10-31T00:39:33.30859888+03:00" username="pesto">
+                
+        <command>invalid-command</command>
+                
+        <arguments/>
+            
+    </event>
+    
+    <event timestamp="2026-10-31T00:39:33.331064763+03:00" username="pesto">
+        <command>exit</command>
+        <arguments/>
+    </event>
+</events>
