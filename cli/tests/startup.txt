@@ -1,0 +1,28 @@
+# basic commands
+
+ls
+ls -l /home
+ls "$HOME"
+
+cd /home
+cd "$HOME"
+
+# Test errors
+
+unknown
+invalid-command
+
+# Test empty arguments and environment variables
+
+ls "${HOME}"
+cd "${USER}"
+
+# Test command without arguments
+
+ls
+cd
+
+# Test exit
+
+exit
+ls

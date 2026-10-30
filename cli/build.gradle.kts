@@ -19,3 +19,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+application {
+    mainClass.set("com.r.Main")
+}
