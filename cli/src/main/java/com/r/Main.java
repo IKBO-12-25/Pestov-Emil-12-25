@@ -25,25 +25,18 @@ public class Main {
 
             System.out.println("VFS loaded successfully.");
             System.out.println("VFS name: " + vfs.getName());
-            System.out.println(
-                    "Directories: " + vfs.getDirectoryCount()
-            );
-            System.out.println(
-                    "Files: " + vfs.getFileCount()
-            );
+            System.out.println("Directories: " + vfs.getDirectoryCount());
+            System.out.println("Files: " + vfs.getFileCount());
             System.out.println();
 
-            XmlCommandLogger logger =
-                    new XmlCommandLogger(config.logPath());
+            XmlCommandLogger logger = new XmlCommandLogger(config.logPath());
 
             Shell shell = new Shell(logger, vfs);
 
             shell.run(config.scriptPath());
 
         } catch (IllegalArgumentException | IOException exception) {
-            System.err.println(
-                    "Application error: " + exception.getMessage()
-            );
+            System.err.println("Application error: " + exception.getMessage());
 
             System.exit(1);
         }
