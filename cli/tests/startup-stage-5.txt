@@ -1,0 +1,52 @@
+# Initial structure
+tree /home/user/rm-tests
+
+# Remove single file
+rm /home/user/rm-tests/file1.txt
+
+# Check that file was removed
+ls /home/user/rm-tests
+
+# Remove multiple files
+rm /home/user/rm-tests/file2.txt /home/user/rm-tests/documents/report.txt
+
+# Try removing directory without -r
+rm /home/user/rm-tests/documents
+
+# Recursive directory removal
+rm -r /home/user/rm-tests/documents
+
+# Check directory removal
+tree /home/user/rm-tests
+
+# Remove empty directory
+rm -r /home/user/rm-tests/empty
+
+# Force mode: missing file
+rm -f /home/user/rm-tests/missing.txt
+
+# Missing file without force
+rm /home/user/rm-tests/missing.txt
+
+# Unknown parameter
+rm -x /home/user/rm-tests/file1.txt
+
+# Root protection
+rm -r /
+
+# Current directory protection
+cd /home/user/rm-tests
+rm -r /home/user/rm-tests
+
+# Return to root
+cd /
+
+# Remove remaining directory recursively
+rm -rf /home/user/rm-tests
+
+# Verify removal
+tree /home/user
+
+exit
+
+ls
