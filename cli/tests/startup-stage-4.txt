@@ -1,4 +1,5 @@
-# LS
+#test stage 4
+
 ls
 ls -a
 ls -l
@@ -7,7 +8,6 @@ ls /home
 ls /home/user
 ls /missing
 
-# CD
 cd /home
 cd user
 cd ..
@@ -16,7 +16,6 @@ cd /missing
 cd /home/user/documents/projects/cli
 cd ..
 
-# UNAME
 uname
 uname -s
 uname -n
@@ -27,7 +26,6 @@ uname -o
 uname -a
 uname -x
 
-# WC
 wc /home/user/documents/projects/cli/readme.txt
 wc -l /home/user/documents/projects/cli/readme.txt
 wc -w /home/user/documents/projects/cli/readme.txt
@@ -36,16 +34,13 @@ wc -lw /home/user/documents/projects/cli/readme.txt
 wc /missing.txt
 wc /home
 
-# TREE
 tree
 tree -a
 tree /home
 tree /missing
 
-# Environment variables
 ls "$HOME"
 
-# Exit
 exit
 
 ls

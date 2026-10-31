@@ -58,14 +58,10 @@ public class Shell {
     }
 
     private boolean executeScript(Path scriptPath) {
-        System.out.println();
-        System.out.println("Executing startup script...");
-        System.out.println();
+        System.out.println("\nExecuting startup script...\n");
 
         if (!Files.isRegularFile(scriptPath)) {
-            System.out.println(
-                    "Ошибка: стартовый скрипт не найден: " + scriptPath
-            );
+            System.out.println("Ошибка: стартовый скрипт не найден: " + scriptPath);
             return true;
         }
 
@@ -99,9 +95,7 @@ public class Shell {
             );
         }
 
-        System.out.println();
-        System.out.println("Startup script finished.");
-        System.out.println();
+        System.out.println("\nStartup script finished.\n");
 
         return true;
     }
@@ -118,9 +112,7 @@ public class Shell {
         try {
             logger.log(command, parsed.arguments());
         } catch (IOException exception) {
-            System.out.println(
-                    "Ошибка логирования: " + exception.getMessage()
-            );
+            System.out.println("Ошибка логирования: " + exception.getMessage());
         }
 
         switch (command) {
@@ -133,9 +125,7 @@ public class Shell {
 
             case "exit" -> {
                 if (!parsed.arguments().isEmpty()) {
-                    System.out.println(
-                            "Ошибка: команда exit не принимает аргументы."
-                    );
+                    System.out.println("Ошибка: команда exit не принимает аргументы.");
                     return true;
                 }
 
@@ -143,9 +133,7 @@ public class Shell {
                 return false;
             }
 
-            default -> System.out.println(
-                    "Ошибка: неизвестная команда: " + command
-            );
+            default -> System.out.println("Ошибка: неизвестная команда: " + command);
         }
 
         return true;
@@ -245,9 +233,7 @@ public class Shell {
 
         String type = node.isDirectory() ? "d" : "-";
 
-        long size = node instanceof com.r.vfs.VfsFile file
-                ? file.getSize()
-                : 0;
+        long size = node instanceof com.r.vfs.VfsFile file ? file.getSize() : 0;
 
         System.out.printf(
                 "%s %10d %s%n",
@@ -260,14 +246,10 @@ public class Shell {
 
     private void executeCd(java.util.List<String> arguments) {
         if (arguments.size() > 1) {
-            throw new IllegalArgumentException(
-                    "cd: слишком много аргументов"
-            );
+            throw new IllegalArgumentException("cd: слишком много аргументов");
         }
 
-        String path = arguments.isEmpty()
-                ? "/"
-                : arguments.get(0);
+        String path = arguments.isEmpty() ? "/" : arguments.get(0);
 
         com.r.vfs.VfsNode node = vfs.resolve(path);
 
@@ -275,6 +257,7 @@ public class Shell {
             System.out.println(
                     "cd: каталог не найден: " + path
             );
+
             return;
         }
 
@@ -282,6 +265,7 @@ public class Shell {
             System.out.println(
                     "cd: не является каталогом: " + path
             );
+
             return;
         }
 
@@ -315,9 +299,7 @@ public class Shell {
 
         for (String argument : arguments) {
             if (!argument.startsWith("-")) {
-                throw new IllegalArgumentException(
-                        "uname: неизвестный аргумент: " + argument
-                );
+                throw new IllegalArgumentException("uname: неизвестный аргумент: " + argument);
             }
 
             for (int i = 1; i < argument.length(); i++) {
@@ -389,9 +371,7 @@ public class Shell {
         }
 
         if (paths.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "wc: необходимо указать файл"
-            );
+            throw new IllegalArgumentException("wc: необходимо указать файл");
         }
 
         if (!countLines && !countWords && !countBytes) {
@@ -408,16 +388,12 @@ public class Shell {
             com.r.vfs.VfsNode node = vfs.resolve(path);
 
             if (node == null) {
-                System.out.println(
-                        "wc: файл не найден: " + path
-                );
+                System.out.println("wc: файл не найден: " + path);
                 continue;
             }
 
             if (!(node instanceof com.r.vfs.VfsFile file)) {
-                System.out.println(
-                        "wc: не является файлом: " + path
-                );
+                System.out.println("wc: не является файлом: " + path);
                 continue;
             }
 
@@ -436,9 +412,7 @@ public class Shell {
                     java.nio.charset.StandardCharsets.UTF_8
             ).strip();
 
-            long words = text.isEmpty()
-                    ? 0
-                    : text.split("\\s+").length;
+            long words = text.isEmpty() ? 0 : text.split("\\s+").length;
 
             long bytes = content.length;
 
@@ -512,8 +486,7 @@ public class Shell {
                         showHidden = true;
                     } else {
                         throw new IllegalArgumentException(
-                                "tree: неизвестный параметр: -" +
-                                        argument.charAt(i)
+                                "tree: неизвестный параметр: -" + argument.charAt(i)
                         );
                     }
                 }
@@ -532,9 +505,7 @@ public class Shell {
         com.r.vfs.VfsNode node = vfs.resolve(path);
 
         if (node == null) {
-            System.out.println(
-                    "tree: путь не найден: " + path
-            );
+            System.out.println("tree: путь не найден: " + path);
             return;
         }
 
@@ -605,8 +576,7 @@ public class Shell {
                         case 'f' -> force = true;
 
                         default -> throw new IllegalArgumentException(
-                                "rm: неизвестный параметр: -" +
-                                        argument.charAt(i)
+                                "rm: неизвестный параметр: -" + argument.charAt(i)
                         );
                     }
                 }
