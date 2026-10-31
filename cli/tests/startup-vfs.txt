@@ -1,23 +1,20 @@
-# Basic commands
+#test vfs
+
 ls
 ls -l
 ls /home
 cd /home
 cd ..
 
-# Environment variables
 ls "$HOME"
 cd "${HOME}"
 
-# Empty arguments
 ls
 cd
 
-# Invalid commands
 unknown
 invalid-command
 
-# Invalid quotation
 ls "unclosed argument
 
 exit
