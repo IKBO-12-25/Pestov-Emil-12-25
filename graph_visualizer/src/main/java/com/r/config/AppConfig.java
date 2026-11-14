@@ -6,4 +6,5 @@ public record AppConfig(
         boolean testMode,
         String outputFile,
         boolean asciiTree
-) { }
+) {
+}
