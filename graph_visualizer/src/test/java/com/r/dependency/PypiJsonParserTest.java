@@ -51,9 +51,18 @@ class PypiJsonParserTest {
     }
 
     @Test
-    void readsEscapedCharacters() {
+    void skipsDependenciesRequiredOnlyByAnExtra() {
         List<Dependency> result = parser.parseDependencies(
                 "{\"requires_dist\":[\"sample>=1; extra == \\\"full\\\"\"]}"
+        );
+
+        assertEquals(List.of(), result);
+    }
+
+    @Test
+    void keepsDependenciesWithPythonVersionMarkers() {
+        List<Dependency> result = parser.parseDependencies(
+                "{\"requires_dist\":[\"sample>=1; python_version >= '3.9'\"]}"
         );
 
         assertEquals(1, result.size());
