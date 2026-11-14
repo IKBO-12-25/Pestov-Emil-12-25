@@ -5,6 +5,7 @@ public record AppConfig(
         String repository,
         boolean testMode,
         String outputFile,
-        boolean asciiTree
+        boolean asciiTree,
+        boolean loadOrder
 ) {
 }

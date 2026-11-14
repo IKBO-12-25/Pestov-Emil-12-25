@@ -11,7 +11,8 @@ import java.util.Set;
 
 public class CommandLineParser {
     private static final Set<String> ALLOWED_OPTIONS = Set.of(
-            "--package", "--repository", "--test-mode", "--output", "--ascii-tree"
+            "--package", "--repository", "--test-mode", "--output", "--ascii-tree",
+            "--load-order"
     );
 
     /**
@@ -24,13 +25,14 @@ public class CommandLineParser {
         boolean testMode = readBoolean(options, "--test-mode");
         String outputFile = required(options, "--output");
         boolean asciiTree = readBoolean(options, "--ascii-tree");
+        boolean loadOrder = readOptionalBoolean(options, "--load-order", false);
 
         validatePackage(packageName);
         validateRepository(repository, testMode);
         validateOutput(outputFile);
 
         return new AppConfig(
-                packageName, repository, testMode, outputFile, asciiTree
+                packageName, repository, testMode, outputFile, asciiTree, loadOrder
         );
     }
 
@@ -65,6 +67,22 @@ public class CommandLineParser {
             throw new IllegalArgumentException("Не задан параметр " + name + ".");
         }
         return value;
+    }
+
+
+    private boolean readOptionalBoolean(
+            Map<String, String> options, String name, boolean defaultValue
+    ) {
+        if (!options.containsKey(name)) {
+            return defaultValue;
+        }
+        String value = options.get(name);
+        if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+            throw new IllegalArgumentException(
+                    "Параметр " + name + " должен быть true или false."
+            );
+        }
+        return Boolean.parseBoolean(value);
     }
 
     private boolean readBoolean(Map<String, String> options, String name) {
@@ -141,6 +159,6 @@ public class CommandLineParser {
         return "Использование:\n"
                 + "  ./run.sh --package ИМЯ --repository URL_ИЛИ_ФАЙЛ\n"
                 + "    --test-mode true|false --output ФАЙЛ.svg\n"
-                + "    --ascii-tree true|false\n";
+                + "    --ascii-tree true|false [--load-order true|false]\n";
     }
 }
