@@ -6,6 +6,8 @@ import com.r.dependency.Dependency;
 import com.r.dependency.PypiClient;
 import com.r.graph.DependencyGraph;
 import com.r.graph.DependencyGraphBuilder;
+import com.r.graph.DependencyLoadOrder;
+import com.r.graph.DependencyLoadOrderCalculator;
 import com.r.graph.DependencyProvider;
 import com.r.graph.TestRepositoryReader;
 
@@ -22,6 +24,9 @@ public class Main {
             DependencyGraph graph = new DependencyGraphBuilder(provider)
                     .build(config.packageName());
             printGraph(graph);
+            if (config.loadOrder()) {
+                printLoadOrder(new DependencyLoadOrderCalculator().calculate(graph));
+            }
         } catch (IllegalArgumentException | IllegalStateException exception) {
             System.err.println("Ошибка: " + exception.getMessage());
             System.err.println(CommandLineParser.usage());
@@ -53,6 +58,28 @@ public class Main {
         System.out.println("test-mode = " + config.testMode());
         System.out.println("output = " + config.outputFile());
         System.out.println("ascii-tree = " + config.asciiTree());
+        System.out.println("load-order = " + config.loadOrder());
+    }
+
+    /**
+     * Выводит порядок загрузки или сообщает, почему его нельзя построить.
+     */
+    private static void printLoadOrder(DependencyLoadOrder loadOrder) {
+        System.out.println("\nПорядок загрузки зависимостей:");
+        if (!loadOrder.isPossible()) {
+            System.out.println("Невозможно определить корректный порядок из-за циклов:");
+            for (String cycle : loadOrder.cycles()) {
+                System.out.println("- " + cycle);
+            }
+            return;
+        }
+        if (loadOrder.packages().isEmpty()) {
+            System.out.println("Пакеты для загрузки отсутствуют.");
+            return;
+        }
+        for (int index = 0; index < loadOrder.packages().size(); index++) {
+            System.out.println((index + 1) + ". " + loadOrder.packages().get(index));
+        }
     }
 
     /**

@@ -25,6 +25,20 @@ class CommandLineParserTest {
         assertEquals("requests", config.packageName());
         assertEquals("https://pypi.org", config.repository());
         assertEquals(true, config.asciiTree());
+        assertEquals(false, config.loadOrder());
+    }
+
+
+    @Test
+    void parsesLoadOrderOption() {
+        String[] args = arguments(
+                "requests", "https://pypi.org", "false", "graph.svg", "false"
+        );
+        String[] extended = java.util.Arrays.copyOf(args, args.length + 2);
+        extended[args.length] = "--load-order";
+        extended[args.length + 1] = "true";
+
+        assertEquals(true, parser.parse(extended).loadOrder());
     }
 
     @Test
