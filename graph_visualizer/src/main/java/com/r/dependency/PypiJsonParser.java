@@ -31,9 +31,17 @@ public class PypiJsonParser {
         List<String> requirements = readStringArray(json, field.end());
         List<Dependency> dependencies = new ArrayList<>();
         for (String requirement : requirements) {
-            dependencies.add(toDependency(requirement));
+            if (!isOptionalExtra(requirement)) {
+                dependencies.add(toDependency(requirement));
+            }
         }
         return List.copyOf(dependencies);
+    }
+
+    private boolean isOptionalExtra(String requirement) {
+        return requirement.matches(
+                "(?is).*;\\s*extra\\s*==\\s*['\"]?[^'\";]+['\"]?.*"
+        );
     }
 
     private List<String> readStringArray(String json, int start) {
