@@ -10,6 +10,12 @@ import com.r.graph.DependencyLoadOrder;
 import com.r.graph.DependencyLoadOrderCalculator;
 import com.r.graph.DependencyProvider;
 import com.r.graph.TestRepositoryReader;
+import com.r.visualization.AsciiTreePrinter;
+import com.r.visualization.PlantUmlGenerator;
+import com.r.visualization.SvgGraphRenderer;
+
+import java.io.IOException;
+import java.nio.file.Files;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -24,10 +30,15 @@ public class Main {
             DependencyGraph graph = new DependencyGraphBuilder(provider)
                     .build(config.packageName());
             printGraph(graph);
+            if (config.asciiTree()) {
+                System.out.println("\nASCII-дерево зависимостей:");
+                System.out.print(new AsciiTreePrinter().print(graph));
+            }
+            saveVisualizations(config.outputFile(), graph);
             if (config.loadOrder()) {
                 printLoadOrder(new DependencyLoadOrderCalculator().calculate(graph));
             }
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | IOException exception) {
             System.err.println("Ошибка: " + exception.getMessage());
             System.err.println(CommandLineParser.usage());
             System.exit(1);
@@ -47,6 +58,23 @@ public class Main {
         }
         PypiClient client = new PypiClient();
         return packageName -> client.fetchDependencies(config.repository(), packageName);
+    }
+
+
+    /** Сохраняет PlantUML-текст и SVG-изображение рядом с указанным SVG-файлом. */
+    private static void saveVisualizations(String outputFile, DependencyGraph graph)
+            throws IOException {
+        Path svgPath = Path.of(outputFile);
+        String fileName = svgPath.getFileName().toString();
+        String plantUmlName = fileName.substring(0, fileName.length() - 4) + ".puml";
+        Path plantUmlPath = svgPath.resolveSibling(plantUmlName);
+
+        String plantUml = new PlantUmlGenerator().generate(graph);
+        String svg = new SvgGraphRenderer().render(graph);
+        Files.writeString(plantUmlPath, plantUml);
+        Files.writeString(svgPath, svg);
+        System.out.println("\nPlantUML сохранён: " + plantUmlPath.toAbsolutePath());
+        System.out.println("SVG-граф сохранён: " + svgPath.toAbsolutePath());
     }
 
     /**

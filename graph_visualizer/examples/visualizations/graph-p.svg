@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="730" height="224" viewBox="0 0 730 224">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#526477"/></marker></defs>
+<rect width="100%" height="100%" fill="#f7f9fc"/>
+<path d="M 190 67 L 290 67" stroke="#526477" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M 190 67 L 290 157" stroke="#526477" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M 440 157 L 540 67" stroke="#526477" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="40" y="40" width="150" height="54" rx="10" fill="#dceafe" stroke="#526477" stroke-width="1.5"/>
+<text x="115" y="73" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#172b4d">P</text>
+<rect x="290" y="40" width="150" height="54" rx="10" fill="#ffffff" stroke="#526477" stroke-width="1.5"/>
+<text x="365" y="73" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#172b4d">Q</text>
+<rect x="290" y="130" width="150" height="54" rx="10" fill="#ffffff" stroke="#526477" stroke-width="1.5"/>
+<text x="365" y="163" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#172b4d">R</text>
+<rect x="540" y="40" width="150" height="54" rx="10" fill="#ffffff" stroke="#526477" stroke-width="1.5"/>
+<text x="615" y="73" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#172b4d">S</text>
+</svg>
