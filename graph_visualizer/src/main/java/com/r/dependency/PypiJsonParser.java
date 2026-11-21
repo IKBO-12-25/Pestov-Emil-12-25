@@ -2,10 +2,24 @@ package com.r.dependency;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PypiJsonParser {
+    private static final int UNICODE_ESCAPE_LENGTH = 4;
+    private static final int HEX_RADIX = 16;
+    private static final Map<Character, Character> SIMPLE_ESCAPES = Map.of(
+            '"', '"',
+            '\\', '\\',
+            '/', '/',
+            'b', '\b',
+            'f', '\f',
+            'n', '\n',
+            'r', '\r',
+            't', '\t'
+    );
+
     private static final Pattern FIELD_PATTERN = Pattern.compile(
             "\"requires_dist\"\\s*:\\s*(null|\\[)",
             Pattern.CASE_INSENSITIVE
@@ -87,26 +101,41 @@ public class PypiJsonParser {
 
     private int appendEscaped(String json, int index, StringBuilder value) {
         if (index >= json.length()) {
-            throw new IllegalArgumentException("Некорректная escape-последовательность JSON.");
+            throw new IllegalArgumentException(
+                    "Некорректная escape-последовательность JSON."
+            );
         }
         char escaped = json.charAt(index++);
-        switch (escaped) {
-            case '"', '\\', '/' -> value.append(escaped);
-            case 'b' -> value.append('\b');
-            case 'f' -> value.append('\f');
-            case 'n' -> value.append('\n');
-            case 'r' -> value.append('\r');
-            case 't' -> value.append('\t');
-            case 'u' -> {
-                if (index + 4 > json.length()) {
-                    throw new IllegalArgumentException("Некорректный Unicode escape в JSON.");
-                }
-                value.append((char) Integer.parseInt(json.substring(index, index + 4), 16));
-                index += 4;
-            }
-            default -> throw new IllegalArgumentException("Неизвестная escape-последовательность JSON.");
+        Character simple = SIMPLE_ESCAPES.get(escaped);
+        if (simple != null) {
+            value.append(simple);
+            return index;
         }
-        return index;
+        if (escaped == 'u') {
+            return appendUnicodeEscape(json, index, value);
+        }
+        throw new IllegalArgumentException(
+                "Неизвестная escape-последовательность JSON."
+        );
+    }
+
+    private int appendUnicodeEscape(
+            String json,
+            int index,
+            StringBuilder value
+    ) {
+        int end = index + UNICODE_ESCAPE_LENGTH;
+        if (end > json.length()) {
+            throw new IllegalArgumentException(
+                    "Некорректный Unicode escape в JSON."
+            );
+        }
+        int codePoint = Integer.parseInt(
+                json.substring(index, end),
+                HEX_RADIX
+        );
+        value.append((char) codePoint);
+        return end;
     }
 
     private Dependency toDependency(String requirement) {
