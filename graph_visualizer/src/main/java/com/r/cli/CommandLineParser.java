@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class CommandLineParser {
+    private static final int EMPTY_ARGS_LENGTH = 0;
+    private static final int OPTION_PAIR_SIZE = 2;
+    private static final int EVEN_REMAINDER = 0;
     private static final Set<String> ALLOWED_OPTIONS = Set.of(
             "--package", "--repository", "--test-mode", "--output", "--ascii-tree",
             "--load-order"
@@ -37,14 +40,15 @@ public class CommandLineParser {
     }
 
     private Map<String, String> readOptions(String[] args) {
-        if (args.length == 0 || args.length % 2 != 0) {
+        if (args.length == EMPTY_ARGS_LENGTH
+                || args.length % OPTION_PAIR_SIZE != EVEN_REMAINDER) {
             throw new IllegalArgumentException(
                     "Для каждой опции необходимо указать значение."
             );
         }
 
         Map<String, String> options = new HashMap<>();
-        for (int index = 0; index < args.length; index += 2) {
+        for (int index = 0; index < args.length; index += OPTION_PAIR_SIZE) {
             String option = args[index];
             validateOption(option, options);
             options.put(option, args[index + 1]);

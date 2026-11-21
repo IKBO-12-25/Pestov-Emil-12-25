@@ -13,6 +13,9 @@ import java.util.List;
 public class PypiClient {
     private final HttpClient httpClient;
     private final PypiJsonParser jsonParser;
+    private static final int HTTP_NOT_FOUND = 404;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_LIMIT = 300;
 
     public PypiClient() {
         this.httpClient = HttpClient.newBuilder()
@@ -37,12 +40,13 @@ public class PypiClient {
             HttpResponse<String> response = httpClient.send(
                     request, HttpResponse.BodyHandlers.ofString()
             );
-            if (response.statusCode() == 404) {
+            if (response.statusCode() == HTTP_NOT_FOUND) {
                 throw new IllegalArgumentException(
                         "Пакет не найден в репозитории: " + packageName
                 );
             }
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            if (response.statusCode() < HTTP_SUCCESS_MIN
+                    || response.statusCode() >= HTTP_SUCCESS_LIMIT) {
                 throw new IllegalStateException(
                         "Репозиторий вернул HTTP " + response.statusCode()
                 );
