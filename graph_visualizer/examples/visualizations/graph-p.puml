@@ -1,8 +1,0 @@
-@startuml
-left to right direction
-skinparam packageStyle rectangle
-skinparam shadowing false
-"P" --> "Q"
-"P" --> "R"
-"R" --> "S"
-@enduml
