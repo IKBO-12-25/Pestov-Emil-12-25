@@ -4,23 +4,104 @@ import com.r.logging.XmlCommandLogger;
 import com.r.parser.CommandParser;
 import com.r.parser.CommandParser.ParsedCommand;
 import com.r.vfs.Vfs;
+import com.r.vfs.VfsDirectory;
+import com.r.vfs.VfsFile;
+import com.r.vfs.VfsNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.function.Consumer;
 
 public class Shell {
+
+    private static final int SINGLE_ITEM_LIMIT = 1;
+    private static final int OPTION_PREFIX_LENGTH = 1;
+    private static final int LAST_INDEX_OFFSET = 1;
+    private static final int FIRST_ARGUMENT_INDEX = 0;
+
+    private static final Map<Character, Set<UnameField>> UNAME_FLAGS = Map.of(
+            'a', EnumSet.allOf(UnameField.class),
+            's', EnumSet.of(UnameField.SYSTEM),
+            'n', EnumSet.of(UnameField.HOSTNAME),
+            'r', EnumSet.of(UnameField.RELEASE),
+            'v', EnumSet.of(UnameField.VERSION),
+            'm', EnumSet.of(UnameField.MACHINE),
+            'p', EnumSet.of(UnameField.PROCESSOR),
+            'i', EnumSet.of(UnameField.MACHINE),
+            'o', EnumSet.of(UnameField.OS)
+    );
 
     private final CommandParser parser;
     private final XmlCommandLogger logger;
     private final Vfs vfs;
+    private final Map<String, Consumer<List<String>>> commands;
+
+    private enum UnameField {
+        SYSTEM,
+        HOSTNAME,
+        RELEASE,
+        VERSION,
+        MACHINE,
+        PROCESSOR,
+        OS
+    }
+
+    private record LsOptions(
+            boolean showHidden,
+            boolean longFormat,
+            List<String> paths
+    ) {}
+
+    private record WcOptions(
+            boolean countLines,
+            boolean countWords,
+            boolean countBytes,
+            List<String> paths
+    ) {}
+
+    private record WcCounts(long lines, long words, long bytes) {
+        private WcCounts add(WcCounts other) {
+            return new WcCounts(
+                    lines + other.lines,
+                    words + other.words,
+                    bytes + other.bytes
+            );
+        }
+    }
+
+    private record TreeOptions(boolean showHidden, String path) {}
+
+    private record RmOptions(
+            boolean recursive,
+            boolean force,
+            List<String> paths
+    ) {}
 
     public Shell(XmlCommandLogger logger, Vfs vfs) {
         this.parser = new CommandParser();
         this.logger = logger;
         this.vfs = vfs;
+        this.commands = createCommandMap();
+    }
+
+    private Map<String, Consumer<List<String>>> createCommandMap() {
+        return Map.of(
+                "ls", this::executeLs,
+                "cd", this::executeCd,
+                "uname", this::executeUname,
+                "wc", this::executeWc,
+                "tree", this::executeTree,
+                "rm", this::executeRm
+        );
     }
 
     private String getPrompt() {
@@ -28,30 +109,21 @@ public class Shell {
     }
 
     public void run(Path scriptPath) {
-        if (scriptPath != null) {
-            if (!executeScript(scriptPath)) {
-                return;
-            }
+        if (scriptPath != null && !executeScript(scriptPath)) {
+            return;
         }
+        runInteractiveLoop();
+    }
 
+    private void runInteractiveLoop() {
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
                 System.out.print(getPrompt());
-
                 if (!scanner.hasNextLine()) {
                     break;
                 }
-
-                String input = scanner.nextLine();
-
-                try {
-                    if (!executeCommand(input)) {
-                        break;
-                    }
-                } catch (IllegalArgumentException exception) {
-                    System.out.println(
-                            "Ошибка: " + exception.getMessage()
-                    );
+                if (!executeSafe(scanner.nextLine())) {
+                    break;
                 }
             }
         }
@@ -59,170 +131,175 @@ public class Shell {
 
     private boolean executeScript(Path scriptPath) {
         System.out.println("\nExecuting startup script...\n");
-
         if (!Files.isRegularFile(scriptPath)) {
             System.out.println("Ошибка: стартовый скрипт не найден: " + scriptPath);
             return true;
         }
 
         try {
-            for (String line : Files.readAllLines(
+            List<String> lines = Files.readAllLines(
                     scriptPath,
                     StandardCharsets.UTF_8
-            )) {
-
-                if (line.isBlank() ||
-                        line.stripLeading().startsWith("#")) {
-                    continue;
-                }
-
-                System.out.println(getPrompt() + line);
-
-                try {
-                    if (!executeCommand(line)) {
-                        return false;
-                    }
-                } catch (IllegalArgumentException exception) {
-                    System.out.println(
-                            "Ошибка: " + exception.getMessage()
-                    );
+            );
+            for (String line : lines) {
+                if (!executeScriptLine(line)) {
+                    return false;
                 }
             }
-
         } catch (IOException exception) {
-            System.out.println(
-                    "Ошибка чтения скрипта: " + exception.getMessage()
-            );
+            System.out.println("Ошибка чтения скрипта: " + exception.getMessage());
         }
 
         System.out.println("\nStartup script finished.\n");
-
         return true;
+    }
+
+    private boolean executeScriptLine(String line) {
+        if (line.isBlank() || line.stripLeading().startsWith("#")) {
+            return true;
+        }
+        System.out.println(getPrompt() + line);
+        return executeSafe(line);
+    }
+
+    private boolean executeSafe(String input) {
+        try {
+            return executeCommand(input);
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Ошибка: " + exception.getMessage());
+            return true;
+        }
     }
 
     private boolean executeCommand(String input) {
         ParsedCommand parsed = parser.parse(input);
-
         if (parsed == null) {
             return true;
         }
 
+        logCommand(parsed);
         String command = parsed.name();
-
-        try {
-            logger.log(command, parsed.arguments());
-        } catch (IOException exception) {
-            System.out.println("Ошибка логирования: " + exception.getMessage());
+        if (command.equals("exit")) {
+            return executeExit(parsed.arguments());
         }
 
-        switch (command) {
-            case "ls" -> executeLs(parsed.arguments());
-            case "cd" -> executeCd(parsed.arguments());
-            case "uname" -> executeUname(parsed.arguments());
-            case "wc" -> executeWc(parsed.arguments());
-            case "tree" -> executeTree(parsed.arguments());
-            case "rm" -> executeRm(parsed.arguments());
-
-            case "exit" -> {
-                if (!parsed.arguments().isEmpty()) {
-                    System.out.println("Ошибка: команда exit не принимает аргументы.");
-                    return true;
-                }
-
-                System.out.println("Завершение работы.");
-                return false;
-            }
-
-            default -> System.out.println("Ошибка: неизвестная команда: " + command);
+        Consumer<List<String>> handler = commands.get(command);
+        if (handler == null) {
+            System.out.println("Ошибка: неизвестная команда: " + command);
+            return true;
         }
 
+        handler.accept(parsed.arguments());
         return true;
     }
 
+    private void logCommand(ParsedCommand parsed) {
+        try {
+            logger.log(parsed.name(), parsed.arguments());
+        } catch (IOException exception) {
+            System.out.println("Ошибка логирования: " + exception.getMessage());
+        }
+    }
 
-    private void executeLs(java.util.List<String> arguments) {
-        boolean showHidden = false;
-        boolean longFormat = false;
+    private boolean executeExit(List<String> arguments) {
+        if (!arguments.isEmpty()) {
+            System.out.println("Ошибка: команда exit не принимает аргументы.");
+            return true;
+        }
+        System.out.println("Завершение работы.");
+        return false;
+    }
 
-        java.util.List<String> paths = new java.util.ArrayList<>();
+    private char[] extractFlags(String argument) {
+        return argument.substring(OPTION_PREFIX_LENGTH).toCharArray();
+    }
+
+    private void executeLs(List<String> arguments) {
+        LsOptions options = parseLsOptions(arguments);
+        for (String path : options.paths()) {
+            printLsTarget(path, options);
+        }
+    }
+
+    private LsOptions parseLsOptions(List<String> arguments) {
+        Set<Character> flags = new HashSet<>();
+        List<String> paths = new ArrayList<>();
 
         for (String argument : arguments) {
+            if (argument.equals("--")) {
+                continue;
+            }
             if (argument.startsWith("-")) {
-                if (argument.equals("--")) {
-                    continue;
-                }
-
-                for (int i = 1; i < argument.length(); i++) {
-                    switch (argument.charAt(i)) {
-                        case 'a' -> showHidden = true;
-                        case 'l' -> longFormat = true;
-                        default -> throw new IllegalArgumentException(
-                                "Неизвестный параметр ls: -" +
-                                        argument.charAt(i)
-                        );
-                    }
-                }
+                collectLsFlags(argument, flags);
             } else {
                 paths.add(argument);
             }
         }
-
         if (paths.isEmpty()) {
             paths.add(".");
         }
+        return new LsOptions(flags.contains('a'), flags.contains('l'), paths);
+    }
 
-        for (String path : paths) {
-            com.r.vfs.VfsNode node = vfs.resolve(path);
-
-            if (node == null) {
-                System.out.println(
-                        "ls: невозможно получить доступ к '" +
-                                path + "': нет такого файла или каталога"
-                );
-                continue;
+    private void collectLsFlags(String argument, Set<Character> flags) {
+        for (char flag : extractFlags(argument)) {
+            if (flag != 'a' && flag != 'l') {
+                throw new IllegalArgumentException("Неизвестный параметр ls: -" + flag);
             }
+            flags.add(flag);
+        }
+    }
 
-            if (node instanceof com.r.vfs.VfsFile file) {
-                printLsEntry(file, longFormat);
-                continue;
-            }
+    private void printLsTarget(String path, LsOptions options) {
+        VfsNode node = vfs.resolve(path);
+        if (node == null) {
+            System.out.println(
+                    "ls: невозможно получить доступ к '" + path
+                            + "': нет такого файла или каталога"
+            );
+            return;
+        }
+        if (node instanceof VfsFile file) {
+            printLsEntry(file, options.longFormat());
+            return;
+        }
+        if (node instanceof VfsDirectory directory) {
+            printLsDirectory(path, directory, options);
+        }
+    }
 
-            if (node instanceof com.r.vfs.VfsDirectory directory) {
-                if (paths.size() > 1) {
-                    System.out.println(path + ":");
-                }
-
-                if (showHidden) {
-                    printLsEntry(directory, longFormat, ".");
-
-                    if (directory.getParent() != null) {
-                        printLsEntry(
-                                directory.getParent(),
-                                longFormat,
-                                ".."
-                        );
-                    } else {
-                        printLsEntry(directory, longFormat, "..");
-                    }
-                }
-
-                for (com.r.vfs.VfsNode child : directory.getChildren()) {
-                    if (!showHidden && child.getName().startsWith(".")) {
-                        continue;
-                    }
-
-                    printLsEntry(child, longFormat);
-                }
+    private void printLsDirectory(
+            String path,
+            VfsDirectory directory,
+            LsOptions options
+    ) {
+        if (options.paths().size() > SINGLE_ITEM_LIMIT) {
+            System.out.println(path + ":");
+        }
+        if (options.showHidden()) {
+            printLsHiddenLinks(directory, options.longFormat());
+        }
+        for (VfsNode child : directory.getChildren()) {
+            if (options.showHidden() || !child.getName().startsWith(".")) {
+                printLsEntry(child, options.longFormat());
             }
         }
     }
 
-    private void printLsEntry(com.r.vfs.VfsNode node, boolean longFormat) {
+    private void printLsHiddenLinks(VfsDirectory directory, boolean longFormat) {
+        printLsEntry(directory, longFormat, ".");
+        VfsDirectory parent = directory.getParent() != null
+                ? directory.getParent()
+                : directory;
+        printLsEntry(parent, longFormat, "..");
+    }
+
+    private void printLsEntry(VfsNode node, boolean longFormat) {
         printLsEntry(node, longFormat, node.getName());
     }
 
     private void printLsEntry(
-            com.r.vfs.VfsNode node,
+            VfsNode node,
             boolean longFormat,
             String displayName
     ) {
@@ -230,416 +307,366 @@ public class Shell {
             System.out.println(displayName);
             return;
         }
-
         String type = node.isDirectory() ? "d" : "-";
-
-        long size = node instanceof com.r.vfs.VfsFile file ? file.getSize() : 0;
-
-        System.out.printf(
-                "%s %10d %s%n",
-                type,
-                size,
-                displayName
-        );
+        long size = node instanceof VfsFile file ? file.getSize() : 0L;
+        System.out.printf("%s %10d %s%n", type, size, displayName);
     }
 
-
-    private void executeCd(java.util.List<String> arguments) {
-        if (arguments.size() > 1) {
+    private void executeCd(List<String> arguments) {
+        if (arguments.size() > SINGLE_ITEM_LIMIT) {
             throw new IllegalArgumentException("cd: слишком много аргументов");
         }
-
-        String path = arguments.isEmpty() ? "/" : arguments.get(0);
-
-        com.r.vfs.VfsNode node = vfs.resolve(path);
+        String path = arguments.isEmpty()
+                ? "/"
+                : arguments.get(FIRST_ARGUMENT_INDEX);
+        VfsNode node = vfs.resolve(path);
 
         if (node == null) {
-            System.out.println(
-                    "cd: каталог не найден: " + path
-            );
-
+            System.out.println("cd: каталог не найден: " + path);
             return;
         }
-
-        if (!(node instanceof com.r.vfs.VfsDirectory)) {
-            System.out.println(
-                    "cd: не является каталогом: " + path
-            );
-
+        if (!(node instanceof VfsDirectory)) {
+            System.out.println("cd: не является каталогом: " + path);
             return;
         }
-
         vfs.changeDirectory(path);
     }
 
+    private void executeUname(List<String> arguments) {
+        EnumSet<UnameField> fields = parseUnameFields(arguments);
+        Map<UnameField, String> values = collectSystemInfo();
+        List<String> result = new ArrayList<>();
 
-    private void executeUname(java.util.List<String> arguments) {
-        String systemName = System.getProperty("os.name", "Unknown");
+        for (UnameField field : fields) {
+            result.add(values.get(field));
+        }
+        System.out.println(String.join(" ", result));
+    }
+
+    private EnumSet<UnameField> parseUnameFields(List<String> arguments) {
+        if (arguments.isEmpty()) {
+            return EnumSet.of(UnameField.SYSTEM);
+        }
+        EnumSet<UnameField> fields = EnumSet.noneOf(UnameField.class);
+        for (String argument : arguments) {
+            if (!argument.startsWith("-")) {
+                throw new IllegalArgumentException(
+                        "uname: неизвестный аргумент: " + argument
+                );
+            }
+            collectUnameFlags(argument, fields);
+        }
+        return fields;
+    }
+
+    private void collectUnameFlags(
+            String argument,
+            EnumSet<UnameField> fields
+    ) {
+        for (char flag : extractFlags(argument)) {
+            Set<UnameField> mapped = UNAME_FLAGS.get(flag);
+            if (mapped == null) {
+                throw new IllegalArgumentException(
+                        "uname: неизвестный параметр: -" + flag
+                );
+            }
+            fields.addAll(mapped);
+        }
+    }
+
+    private Map<UnameField, String> collectSystemInfo() {
         String hostname = System.getenv().getOrDefault(
                 "HOSTNAME",
                 System.getenv().getOrDefault("COMPUTERNAME", "localhost")
         );
-
-        String release = System.getProperty("os.version", "Unknown");
-        String version = System.getProperty("java.version", "Unknown");
         String machine = System.getProperty("os.arch", "Unknown");
-
-        boolean showAll = arguments.contains("-a");
-        boolean showSystem = showAll;
-        boolean showHostname = false;
-        boolean showRelease = false;
-        boolean showVersion = false;
-        boolean showMachine = false;
-        boolean showProcessor = false;
-        boolean showOperatingSystem = false;
-
-        if (arguments.isEmpty()) {
-            showSystem = true;
-        }
-
-        for (String argument : arguments) {
-            if (!argument.startsWith("-")) {
-                throw new IllegalArgumentException("uname: неизвестный аргумент: " + argument);
-            }
-
-            for (int i = 1; i < argument.length(); i++) {
-                switch (argument.charAt(i)) {
-                    case 'a' -> {
-                        showSystem = true;
-                        showHostname = true;
-                        showRelease = true;
-                        showVersion = true;
-                        showMachine = true;
-                        showProcessor = true;
-                        showOperatingSystem = true;
-                    }
-                    case 's' -> showSystem = true;
-                    case 'n' -> showHostname = true;
-                    case 'r' -> showRelease = true;
-                    case 'v' -> showVersion = true;
-                    case 'm' -> showMachine = true;
-                    case 'p' -> showProcessor = true;
-                    case 'i' -> showMachine = true;
-                    case 'o' -> showOperatingSystem = true;
-
-                    default -> throw new IllegalArgumentException(
-                            "uname: неизвестный параметр: -" +
-                                    argument.charAt(i)
-                    );
-                }
-            }
-        }
-
-        java.util.List<String> result = new java.util.ArrayList<>();
-
-        if (showSystem) result.add(systemName);
-        if (showHostname) result.add(hostname);
-        if (showRelease) result.add(release);
-        if (showVersion) result.add(version);
-        if (showMachine) result.add(machine);
-        if (showProcessor) result.add(machine);
-        if (showOperatingSystem) result.add("GNU/Linux");
-
-        System.out.println(String.join(" ", result));
+        return Map.of(
+                UnameField.SYSTEM, System.getProperty("os.name", "Unknown"),
+                UnameField.HOSTNAME, hostname,
+                UnameField.RELEASE, System.getProperty("os.version", "Unknown"),
+                UnameField.VERSION, System.getProperty("java.version", "Unknown"),
+                UnameField.MACHINE, machine,
+                UnameField.PROCESSOR, machine,
+                UnameField.OS, "GNU/Linux"
+        );
     }
 
+    private void executeWc(List<String> arguments) {
+        WcOptions options = parseWcOptions(arguments);
+        WcCounts total = new WcCounts(0L, 0L, 0L);
 
-    private void executeWc(java.util.List<String> arguments) {
-        boolean countLines = false;
-        boolean countWords = false;
-        boolean countBytes = false;
+        for (String path : options.paths()) {
+            WcCounts counts = processWcFile(path, options);
+            if (counts != null) {
+                total = total.add(counts);
+            }
+        }
+        if (options.paths().size() > SINGLE_ITEM_LIMIT) {
+            printWcResult(total, "total", options);
+        }
+    }
 
-        java.util.List<String> paths = new java.util.ArrayList<>();
+    private WcOptions parseWcOptions(List<String> arguments) {
+        Set<Character> flags = new HashSet<>();
+        List<String> paths = new ArrayList<>();
 
         for (String argument : arguments) {
             if (argument.startsWith("-")) {
-                for (int i = 1; i < argument.length(); i++) {
-                    switch (argument.charAt(i)) {
-                        case 'l' -> countLines = true;
-                        case 'w' -> countWords = true;
-                        case 'c' -> countBytes = true;
-
-                        default -> throw new IllegalArgumentException(
-                                "wc: неизвестный параметр: -" +
-                                        argument.charAt(i)
-                        );
-                    }
-                }
+                collectWcFlags(argument, flags);
             } else {
                 paths.add(argument);
             }
         }
-
         if (paths.isEmpty()) {
             throw new IllegalArgumentException("wc: необходимо указать файл");
         }
+        boolean showAll = flags.isEmpty();
+        return new WcOptions(
+                showAll || flags.contains('l'),
+                showAll || flags.contains('w'),
+                showAll || flags.contains('c'),
+                paths
+        );
+    }
 
-        if (!countLines && !countWords && !countBytes) {
-            countLines = true;
-            countWords = true;
-            countBytes = true;
-        }
-
-        long totalLines = 0;
-        long totalWords = 0;
-        long totalBytes = 0;
-
-        for (String path : paths) {
-            com.r.vfs.VfsNode node = vfs.resolve(path);
-
-            if (node == null) {
-                System.out.println("wc: файл не найден: " + path);
-                continue;
+    private void collectWcFlags(String argument, Set<Character> flags) {
+        for (char flag : extractFlags(argument)) {
+            if (flag != 'l' && flag != 'w' && flag != 'c') {
+                throw new IllegalArgumentException(
+                        "wc: неизвестный параметр: -" + flag
+                );
             }
-
-            if (!(node instanceof com.r.vfs.VfsFile file)) {
-                System.out.println("wc: не является файлом: " + path);
-                continue;
-            }
-
-            byte[] content = file.getContent();
-
-            long lines = 0;
-
-            for (byte value : content) {
-                if (value == '\n') {
-                    lines++;
-                }
-            }
-
-            String text = new String(
-                    content,
-                    java.nio.charset.StandardCharsets.UTF_8
-            ).strip();
-
-            long words = text.isEmpty() ? 0 : text.split("\\s+").length;
-
-            long bytes = content.length;
-
-            totalLines += lines;
-            totalWords += words;
-            totalBytes += bytes;
-
-            printWcResult(
-                    lines,
-                    words,
-                    bytes,
-                    path,
-                    countLines,
-                    countWords,
-                    countBytes
-            );
+            flags.add(flag);
         }
+    }
 
-        if (paths.size() > 1) {
-            printWcResult(
-                    totalLines,
-                    totalWords,
-                    totalBytes,
-                    "total",
-                    countLines,
-                    countWords,
-                    countBytes
-            );
+    private WcCounts processWcFile(String path, WcOptions options) {
+        VfsNode node = vfs.resolve(path);
+        if (node == null) {
+            System.out.println("wc: файл не найден: " + path);
+            return null;
         }
+        if (!(node instanceof VfsFile file)) {
+            System.out.println("wc: не является файлом: " + path);
+            return null;
+        }
+        WcCounts counts = countFileMetrics(file.getContent());
+        printWcResult(counts, path, options);
+        return counts;
+    }
+
+    private WcCounts countFileMetrics(byte[] content) {
+        long lines = 0L;
+        for (byte value : content) {
+            if (value == '\n') {
+                lines++;
+            }
+        }
+        String text = new String(content, StandardCharsets.UTF_8).strip();
+        long words = text.isEmpty() ? 0L : text.split("\\s+").length;
+        return new WcCounts(lines, words, content.length);
     }
 
     private void printWcResult(
-            long lines,
-            long words,
-            long bytes,
+            WcCounts counts,
             String path,
-            boolean countLines,
-            boolean countWords,
-            boolean countBytes
+            WcOptions options
     ) {
         StringBuilder result = new StringBuilder();
-
-        if (countLines) {
-            result.append(String.format("%7d", lines));
+        if (options.countLines()) {
+            result.append(String.format("%7d", counts.lines()));
         }
-
-        if (countWords) {
-            result.append(String.format("%7d", words));
+        if (options.countWords()) {
+            result.append(String.format("%7d", counts.words()));
         }
-
-        if (countBytes) {
-            result.append(String.format("%7d", bytes));
+        if (options.countBytes()) {
+            result.append(String.format("%7d", counts.bytes()));
         }
-
         result.append(" ").append(path);
-
         System.out.println(result);
     }
 
+    private void executeTree(List<String> arguments) {
+        TreeOptions options = parseTreeOptions(arguments);
+        VfsNode node = vfs.resolve(options.path());
 
-    private void executeTree(java.util.List<String> arguments) {
+        if (node == null) {
+            System.out.println("tree: путь не найден: " + options.path());
+            return;
+        }
+        System.out.println(node.getName());
+        if (node instanceof VfsDirectory directory) {
+            printTree(directory, "", options.showHidden());
+        }
+    }
+
+    private TreeOptions parseTreeOptions(List<String> arguments) {
         boolean showHidden = false;
         String path = ".";
-
         boolean pathSpecified = false;
 
         for (String argument : arguments) {
             if (argument.startsWith("-")) {
-                for (int i = 1; i < argument.length(); i++) {
-                    if (argument.charAt(i) == 'a') {
-                        showHidden = true;
-                    } else {
-                        throw new IllegalArgumentException(
-                                "tree: неизвестный параметр: -" + argument.charAt(i)
-                        );
-                    }
-                }
+                showHidden = parseTreeFlags(argument) || showHidden;
             } else {
                 if (pathSpecified) {
                     throw new IllegalArgumentException(
                             "tree: слишком много аргументов"
                     );
                 }
-
                 path = argument;
                 pathSpecified = true;
             }
         }
+        return new TreeOptions(showHidden, path);
+    }
 
-        com.r.vfs.VfsNode node = vfs.resolve(path);
-
-        if (node == null) {
-            System.out.println("tree: путь не найден: " + path);
-            return;
+    private boolean parseTreeFlags(String argument) {
+        boolean showHidden = false;
+        for (char flag : extractFlags(argument)) {
+            if (flag != 'a') {
+                throw new IllegalArgumentException(
+                        "tree: неизвестный параметр: -" + flag
+                );
+            }
+            showHidden = true;
         }
-
-        System.out.println(node.getName());
-
-        if (node instanceof com.r.vfs.VfsDirectory directory) {
-            printTree(directory, "", showHidden);
-        }
+        return showHidden;
     }
 
     private void printTree(
-            com.r.vfs.VfsDirectory directory,
+            VfsDirectory directory,
             String prefix,
             boolean showHidden
     ) {
-        java.util.List<com.r.vfs.VfsNode> children =
-                new java.util.ArrayList<>();
-
-        for (com.r.vfs.VfsNode child : directory.getChildren()) {
-            if (!showHidden && child.getName().startsWith(".")) {
-                continue;
-            }
-
-            children.add(child);
-        }
+        List<VfsNode> children = filterVisibleChildren(directory, showHidden);
+        int lastIndex = children.size() - LAST_INDEX_OFFSET;
 
         for (int i = 0; i < children.size(); i++) {
-            com.r.vfs.VfsNode child = children.get(i);
-
-            boolean last = i == children.size() - 1;
-
+            VfsNode child = children.get(i);
+            boolean last = i == lastIndex;
             String connector = last ? "└── " : "├── ";
-
             System.out.println(prefix + connector + child.getName());
 
-            if (child instanceof com.r.vfs.VfsDirectory childDirectory) {
+            if (child instanceof VfsDirectory childDirectory) {
                 String nextPrefix = prefix + (last ? "    " : "│   ");
-
-                printTree(
-                        childDirectory,
-                        nextPrefix,
-                        showHidden
-                );
+                printTree(childDirectory, nextPrefix, showHidden);
             }
         }
     }
 
-    private void executeRm(java.util.List<String> arguments) {
-        boolean recursive = false;
-        boolean force = false;
+    private List<VfsNode> filterVisibleChildren(
+            VfsDirectory directory,
+            boolean showHidden
+    ) {
+        List<VfsNode> children = new ArrayList<>();
+        for (VfsNode child : directory.getChildren()) {
+            if (showHidden || !child.getName().startsWith(".")) {
+                children.add(child);
+            }
+        }
+        return children;
+    }
+
+    private void executeRm(List<String> arguments) {
+        RmOptions options = parseRmOptions(arguments);
+        for (String path : options.paths()) {
+            removeEntry(path, options);
+        }
+    }
+
+    private RmOptions parseRmOptions(List<String> arguments) {
+        Set<Character> flags = new HashSet<>();
+        List<String> paths = new ArrayList<>();
         boolean optionsEnabled = true;
 
-        java.util.List<String> paths = new java.util.ArrayList<>();
-
         for (String argument : arguments) {
-
             if (optionsEnabled && argument.equals("--")) {
                 optionsEnabled = false;
-                continue;
-            }
-
-            if (optionsEnabled && argument.startsWith("-")
-                    && !argument.equals("-")) {
-
-                for (int i = 1; i < argument.length(); i++) {
-                    switch (argument.charAt(i)) {
-                        case 'r', 'R' -> recursive = true;
-                        case 'f' -> force = true;
-
-                        default -> throw new IllegalArgumentException(
-                                "rm: неизвестный параметр: -" + argument.charAt(i)
-                        );
-                    }
-                }
-
+            } else if (isRmOption(argument, optionsEnabled)) {
+                collectRmFlags(argument, flags);
             } else {
                 paths.add(argument);
             }
         }
-
         if (paths.isEmpty()) {
             throw new IllegalArgumentException(
                     "rm: необходимо указать файл или каталог"
             );
         }
+        return new RmOptions(flags.contains('r'), flags.contains('f'), paths);
+    }
 
-        for (String path : paths) {
-            com.r.vfs.VfsNode node = vfs.resolve(path);
+    private boolean isRmOption(String argument, boolean optionsEnabled) {
+        return optionsEnabled && argument.startsWith("-") && !argument.equals("-");
+    }
 
-            if (node == null) {
-                if (!force) {
-                    System.out.println(
-                            "rm: невозможно удалить '" +
-                                    path + "': нет такого файла или каталога"
-                    );
-                }
-
-                continue;
-            }
-
-            if (node == vfs.getRoot()) {
-                System.out.println(
-                        "rm: запрещено удалять корневую директорию VFS"
-                );
-                continue;
-            }
-
-            if (node instanceof com.r.vfs.VfsDirectory directory) {
-
-                if (vfs.contains(
-                        directory,
-                        vfs.getCurrentDirectory()
-                )) {
-                    System.out.println(
-                            "rm: нельзя удалить текущий каталог " +
-                                    "или его родительскую директорию"
-                    );
-                    continue;
-                }
-
-                if (!recursive) {
-                    System.out.println(
-                            "rm: невозможно удалить '" + path +
-                                    "': является каталогом (используйте -r)"
-                    );
-                    continue;
-                }
-            }
-
-            if (!vfs.remove(path, recursive)) {
-                System.out.println(
-                        "rm: не удалось удалить: " + path
+    private void collectRmFlags(String argument, Set<Character> flags) {
+        for (char flag : extractFlags(argument)) {
+            if (flag == 'r' || flag == 'R') {
+                flags.add('r');
+            } else if (flag == 'f') {
+                flags.add('f');
+            } else {
+                throw new IllegalArgumentException(
+                        "rm: неизвестный параметр: -" + flag
                 );
             }
         }
+    }
+
+    private void removeEntry(String path, RmOptions options) {
+        VfsNode node = vfs.resolve(path);
+        if (node == null) {
+            if (!options.force()) {
+                System.out.println(
+                        "rm: невозможно удалить '" + path
+                                + "': нет такого файла или каталога"
+                );
+            }
+            return;
+        }
+        if (!canRemoveNode(node, path, options.recursive())) {
+            return;
+        }
+        if (!vfs.remove(path, options.recursive())) {
+            System.out.println("rm: не удалось удалить: " + path);
+        }
+    }
+
+    private boolean canRemoveNode(
+            VfsNode node,
+            String path,
+            boolean recursive
+    ) {
+        if (node == vfs.getRoot()) {
+            System.out.println("rm: запрещено удалять корневую директорию VFS");
+            return false;
+        }
+        if (node instanceof VfsDirectory directory) {
+            return canRemoveDirectory(directory, path, recursive);
+        }
+        return true;
+    }
+
+    private boolean canRemoveDirectory(
+            VfsDirectory directory,
+            String path,
+            boolean recursive
+    ) {
+        if (vfs.contains(directory, vfs.getCurrentDirectory())) {
+            System.out.println(
+                    "rm: нельзя удалить текущий каталог или его родительскую директорию"
+            );
+            return false;
+        }
+        if (!recursive) {
+            System.out.println(
+                    "rm: невозможно удалить '" + path
+                            + "': является каталогом (используйте -r)"
+            );
+            return false;
+        }
+        return true;
     }
 }

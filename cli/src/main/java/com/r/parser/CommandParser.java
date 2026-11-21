@@ -1,4 +1,3 @@
-
 package com.r.parser;
 
 import java.util.ArrayList;
@@ -8,8 +7,12 @@ import java.util.regex.Pattern;
 
 public class CommandParser {
 
-    private static final Pattern VARIABLE_PATTERN =
-            Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile(
+            "\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)"
+    );
+    private static final char NO_QUOTE = '\0';
+    private static final int COMMAND_INDEX = 0;
+    private static final int FIRST_ARGUMENT_INDEX = 1;
 
     public record ParsedCommand(
             String name,
@@ -25,8 +28,8 @@ public class CommandParser {
         }
 
         return new ParsedCommand(
-                tokens.get(0),
-                tokens.subList(1, tokens.size())
+                tokens.get(COMMAND_INDEX),
+                tokens.subList(FIRST_ARGUMENT_INDEX, tokens.size())
         );
     }
 
@@ -38,16 +41,11 @@ public class CommandParser {
             String variableName = matcher.group(1) != null
                     ? matcher.group(1)
                     : matcher.group(2);
-
             String value = System.getenv(variableName);
-
-            if (value == null) {
-                value = "";
-            }
-
+            String replacement = value == null ? "" : value;
             matcher.appendReplacement(
                     result,
-                    Matcher.quoteReplacement(value)
+                    Matcher.quoteReplacement(replacement)
             );
         }
 
@@ -56,73 +54,84 @@ public class CommandParser {
     }
 
     private List<String> tokenize(String input) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
+        TokenizerState state = new TokenizerState();
+        for (char currentChar : input.toCharArray()) {
+            state.processChar(currentChar);
+        }
+        return state.finish();
+    }
 
-        char quote = 0;
-        boolean escaped = false;
-        boolean tokenStarted = false;
+    private static final class TokenizerState {
 
-        for (char c : input.toCharArray()) {
+        private final List<String> tokens = new ArrayList<>();
+        private final StringBuilder current = new StringBuilder();
+        private char quote = NO_QUOTE;
+        private boolean escaped;
+        private boolean tokenStarted;
 
+        private void processChar(char currentChar) {
             if (escaped) {
-                current.append(c);
+                current.append(currentChar);
                 escaped = false;
                 tokenStarted = true;
-                continue;
+                return;
             }
-
-            if (c == '\\' && quote != '\'') {
+            if (isEscapeStart(currentChar)) {
                 escaped = true;
                 tokenStarted = true;
-                continue;
+                return;
             }
-
-            if (quote != 0) {
-                if (c == quote) {
-                    quote = 0;
-                } else {
-                    current.append(c);
-                }
-
-                tokenStarted = true;
-                continue;
+            if (quote != NO_QUOTE) {
+                handleQuotedChar(currentChar);
+                return;
             }
+            handleUnquotedChar(currentChar);
+        }
 
-            if (c == '\'' || c == '"') {
-                quote = c;
-                tokenStarted = true;
-                continue;
+        private boolean isEscapeStart(char currentChar) {
+            return currentChar == '\\' && quote != '\'';
+        }
+
+        private void handleQuotedChar(char currentChar) {
+            if (currentChar == quote) {
+                quote = NO_QUOTE;
+            } else {
+                current.append(currentChar);
             }
-
-            if (Character.isWhitespace(c)) {
-                if (tokenStarted) {
-                    tokens.add(current.toString());
-                    current.setLength(0);
-                    tokenStarted = false;
-                }
-
-                continue;
-            }
-
-            current.append(c);
             tokenStarted = true;
         }
 
-        if (escaped) {
-            current.append('\\');
+        private void handleUnquotedChar(char currentChar) {
+            if (currentChar == '\'' || currentChar == '"') {
+                quote = currentChar;
+                tokenStarted = true;
+                return;
+            }
+            if (Character.isWhitespace(currentChar)) {
+                flushToken();
+                return;
+            }
+            current.append(currentChar);
+            tokenStarted = true;
         }
 
-        if (quote != 0) {
-            throw new IllegalArgumentException(
-                    "Unclosed quotation mark"
-            );
+        private void flushToken() {
+            if (tokenStarted) {
+                tokens.add(current.toString());
+                current.setLength(0);
+                tokenStarted = false;
+            }
         }
 
-        if (tokenStarted) {
-            tokens.add(current.toString());
+        private List<String> finish() {
+            if (escaped) {
+                current.append('\\');
+            }
+            if (quote != NO_QUOTE) {
+                throw new IllegalArgumentException("Unclosed quotation mark");
+            }
+            flushToken();
+            return tokens;
         }
-
-        return tokens;
     }
 }
